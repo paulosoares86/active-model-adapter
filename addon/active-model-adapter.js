@@ -131,6 +131,25 @@ const ActiveModelAdapter = RESTAdapter.extend({
   },
 
   /**
+    Provides full_messages with errors to make it easier to frontend display
+    error messages
+  */
+
+  errorsHashToArrayWithAndFullMessages: function(errors) {
+    let pos = 0;
+    let out = errorsHashToArray(errors);
+    if (Ember.isPresent(errors)) {
+      Object.keys(errors).forEach((key) => {
+        let messages = Ember.makeArray(errors[key]);
+        for (let i = 0; i < messages.length; i++) {
+          out[pos].fullMessage = `${key.classify()} ${out[pos++].detail}`;
+        }
+      });
+    }
+    return out;
+  },
+
+  /**
     The ActiveModelAdapter overrides the `handleResponse` method
     to format errors passed to a DS.InvalidError for all
     422 Unprocessable Entity responses.
@@ -150,7 +169,7 @@ const ActiveModelAdapter = RESTAdapter.extend({
   */
   handleResponse: function(status, headers, payload) {
     if (this.isInvalid(status, headers, payload)) {
-      let errors = errorsHashToArray(payload.errors);
+      let errors = this.errorsHashToArrayWithAndFullMessages(payload);
 
       return new InvalidError(errors);
     } else {
